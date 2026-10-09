@@ -960,25 +960,42 @@
             div_ProyCarbo.id = "div_ProyCarbo";
             div_ProyCarbo.className= "filterselect";
             document.getElementById("menu").appendChild(div_ProyCarbo);
-            sel_ProyCarbo = document.createElement('select');
-            sel_ProyCarbo.multiple = false;
-            sel_ProyCarbo.size = 1;
-            sel_ProyCarbo.id = "sel_ProyCarbo";
-            var ProyCarbo_options_str = "";
-            sel_ProyCarbo.onchange = function(){filterFunc()};
-            
-            ProyCarbo_options_str  += '<option value="Si">Si</option>';
-            sel_ProyCarbo.innerHTML = ProyCarbo_options_str;
-            div_ProyCarbo.appendChild(sel_ProyCarbo);
-            var lab_ProyCarbo = document.createElement('div');
-            lab_ProyCarbo.innerHTML = 'Áreas con presencia de proyectos de carbono';
-            lab_ProyCarbo.className = 'filterlabel';
-            div_ProyCarbo.appendChild(lab_ProyCarbo);
+           // Crear el contenedor con la casilla y su etiqueta
+			var label_ProyCarbo = document.createElement('label');
+			label_ProyCarbo.style.cursor = 'pointer';
+
+			var chk_ProyCarbo = document.createElement('input');
+			chk_ProyCarbo.type = 'checkbox';
+			chk_ProyCarbo.id = 'chk_ProyCarbo';
+		chk_ProyCarbo.style.marginRight = '8px';
+
+// Crear el elemento select oculto que mantendrá viva la lógica de qgis2web
+			sel_ProyCarbo = document.createElement('select');
+			sel_ProyCarbo.id = "sel_ProyCarbo";
+			sel_ProyCarbo.style.display = "none";
+			sel_ProyCarbo.innerHTML = '<option value="Si">Si</option>';
+
+// Evento al marcar / desmarcar la casilla
+			chk_ProyCarbo.onchange = function() {
+  		  sel_ProyCarbo.options[0].selected = this.checked;
+		    filterFunc();
+			};
+
+			label_ProyCarbo.appendChild(chk_ProyCarbo);
+			label_ProyCarbo.appendChild(document.createTextNode('Áreas con presencia de proyectos de carbono'));
+
+			div_ProyCarbo.appendChild(label_ProyCarbo);
+			div_ProyCarbo.appendChild(sel_ProyCarbo);
+            //var lab_ProyCarbo = document.createElement('div');
+            //lab_ProyCarbo.innerHTML = 'Áreas con presencia de proyectos de carbono';
+            //lab_ProyCarbo.className = 'filterlabel';
+            //div_ProyCarbo.appendChild(lab_ProyCarbo);
             var reset_ProyCarbo = document.createElement('div');
             reset_ProyCarbo.innerHTML = 'clear filter';
             reset_ProyCarbo.className = 'filterlabel';
             reset_ProyCarbo.onclick = function() {
-                var options = document.getElementById("sel_ProyCarbo").options;
+                document.getElementById("chk_ProyCarbo").checked=false;
+				var options = document.getElementById("sel_ProyCarbo").options;
                 for (var i=0; i < options.length; i++) {
                     options[i].selected = false;
                 }
