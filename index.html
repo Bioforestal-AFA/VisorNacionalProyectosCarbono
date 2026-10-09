@@ -977,7 +977,7 @@
 
 // Evento al marcar / desmarcar la casilla
 			chk_ProyCarbo.onchange = function() {
-  		  sel_ProyCarbo.options[0].selected = this.checked;
+  		    sel_ProyCarbo.options[0].selected = this.checked;
 		    filterFunc();
 			};
 
@@ -990,17 +990,17 @@
             //lab_ProyCarbo.innerHTML = 'Áreas con presencia de proyectos de carbono';
             //lab_ProyCarbo.className = 'filterlabel';
             //div_ProyCarbo.appendChild(lab_ProyCarbo);
-            var reset_ProyCarbo = document.createElement('div');
-            reset_ProyCarbo.innerHTML = 'clear filter';
-            reset_ProyCarbo.className = 'filterlabel';
-            reset_ProyCarbo.onclick = function() {
-                var options = document.getElementById("sel_ProyCarbo").options;
-				for (var i=0; i < options.length; i++) {
-                    options[i].selected = false;
-                }
-                filterFunc();
-            };
-            div_ProyCarbo.appendChild(reset_ProyCarbo);
+            ///var reset_ProyCarbo = document.createElement('div');
+            ///reset_ProyCarbo.innerHTML = 'clear filter';
+            ///reset_ProyCarbo.className = 'filterlabel';
+            ///reset_ProyCarbo.onclick = function() {
+            ///    var options = document.getElementById("sel_ProyCarbo").options;
+			///	for (var i=0; i < options.length; i++) {
+            ///        options[i].selected = false;
+            ///    }
+            ///    filterFunc();
+            ///};
+            ///div_ProyCarbo.appendChild(reset_ProyCarbo);
             document.getElementById("menu").appendChild(
                 document.createElement("div"));
             var div_Estado = document.createElement('div');
