@@ -961,8 +961,8 @@
             div_ProyCarbo.className= "filterselect";
             document.getElementById("menu").appendChild(div_ProyCarbo);
             sel_ProyCarbo = document.createElement('select');
-            sel_ProyCarbo.multiple = true;
-            sel_ProyCarbo.size = 2;
+            sel_ProyCarbo.multiple = false;
+            sel_ProyCarbo.size = 1;
             sel_ProyCarbo.id = "sel_ProyCarbo";
             var ProyCarbo_options_str = "";
             sel_ProyCarbo.onchange = function(){filterFunc()};
