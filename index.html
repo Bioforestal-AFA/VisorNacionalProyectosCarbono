@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Visor nacional de proyectos de carbono y co-beneficios ambientales</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/multi-style-layer.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/RegionesHidrolgicasPrioritarias_2.js"></script>
+        <script src="data/CuencasHidrolgicas_3.js"></script>
+        <script src="data/Acuferos_4.js"></script>
+        <script src="data/CorredoresBiolgicos_5.js"></script>
+        <script src="data/reasDestinadasVoluntariamentealaConservacin_6.js"></script>
+        <script src="data/reasNaturalesProtegidas_7.js"></script>
+        <script src="data/AreasNaturalesProtegidasFederales_8.js"></script>
+        <script src="data/ProyectosCarbono_9.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: 'rgba(255, 255, 0, 1.00)',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: 'rgba(255, 255, 0, 1.00)',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[6.914249455176302,-127.56300754590357],[37.694218934613765,-75.30855461811666]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var title = new L.Control({'position':'topleft'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Visor nacional de proyectos de carbono y co-beneficios ambientales</h2>';
+        };
+        title.addTo(map);
+        var abstract = new L.Control({'position':'bottomleft'});
+        abstract.onAdd = function (map) {
+            this._div = L.DomUtil.create('div',
+            'leaflet-control abstract');
+            this._div.id = 'abstract'
+
+                abstract.show();
+                return this._div;
+            };
+            abstract.show = function () {
+                this._div.classList.remove("abstract");
+                this._div.classList.add("abstractUncollapsed");
+                this._div.innerHTML = 'Explora su distribución geográfica y su relación con las áreas de conservación, la biodiversidad y los recursos hídricos del país.';
+        };
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleTerrain_0');
+        map.getPane('pane_GoogleTerrain_0').style.zIndex = 400;
+        var layer_GoogleTerrain_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleTerrain_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleTerrain_0;
+        map.addLayer(layer_GoogleTerrain_0);
+        map.createPane('pane_GoogleSatellite_1');
+        map.getPane('pane_GoogleSatellite_1').style.zIndex = 401;
+        var layer_GoogleSatellite_1 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_1',
+            opacity: 0.5,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_1;
+        map.addLayer(layer_GoogleSatellite_1);
+        function pop_RegionesHidrolgicasPrioritarias_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Región Hidrolígica Prioritaria:</strong><br />' + (feature.properties['NOMBRE'] !== null ? autolinker.link(String(feature.properties['NOMBRE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        var pattern_RegionesHidrolgicasPrioritarias_2_0 = new L.StripePattern({
+            weight: 0.5,
+            spaceWeight: 0.4,
+            color: '#1374ae',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 315
+        });
+        pattern_RegionesHidrolgicasPrioritarias_2_0.addTo(map);
+        function style_RegionesHidrolgicasPrioritarias_2_0() {
+            return {
+                pane: 'pane_RegionesHidrolgicasPrioritarias_2',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_RegionesHidrolgicasPrioritarias_2_0,
+                interactive: true,
+            }
+        }
+        var pattern_RegionesHidrolgicasPrioritarias_2_1 = new L.StripePattern({
+            weight: 0.5,
+            spaceWeight: 0.2,
+            color: '#1374ae',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 225
+        });
+        pattern_RegionesHidrolgicasPrioritarias_2_1.addTo(map);
+        function style_RegionesHidrolgicasPrioritarias_2_1() {
+            return {
+                pane: 'pane_RegionesHidrolgicasPrioritarias_2',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_RegionesHidrolgicasPrioritarias_2_1,
+                interactive: true,
+            }
+        }
+        function style_RegionesHidrolgicasPrioritarias_2_2() {
+            return {
+                pane: 'pane_RegionesHidrolgicasPrioritarias_2',
+                opacity: 1,
+                color: 'rgba(19,116,174,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RegionesHidrolgicasPrioritarias_2');
+        map.getPane('pane_RegionesHidrolgicasPrioritarias_2').style.zIndex = 402;
+        map.getPane('pane_RegionesHidrolgicasPrioritarias_2').style['mix-blend-mode'] = 'normal';
+        var layer_RegionesHidrolgicasPrioritarias_2 = new L.geoJson.multiStyle(json_RegionesHidrolgicasPrioritarias_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RegionesHidrolgicasPrioritarias_2',
+            layerName: 'layer_RegionesHidrolgicasPrioritarias_2',
+            pane: 'pane_RegionesHidrolgicasPrioritarias_2',
+            onEachFeature: pop_RegionesHidrolgicasPrioritarias_2,
+            styles: [style_RegionesHidrolgicasPrioritarias_2_0,style_RegionesHidrolgicasPrioritarias_2_1,style_RegionesHidrolgicasPrioritarias_2_2,]
+        });
+        bounds_group.addLayer(layer_RegionesHidrolgicasPrioritarias_2);
+        map.addLayer(layer_RegionesHidrolgicasPrioritarias_2);
+        function pop_CuencasHidrolgicas_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Nombre de la cuenca:</strong><br />' + (feature.properties['CUENCA'] !== null ? autolinker.link(String(feature.properties['CUENCA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Región:</strong><br />' + (feature.properties['REGION'] !== null ? autolinker.link(String(feature.properties['REGION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CuencasHidrolgicas_3_0() {
+            return {
+                pane: 'pane_CuencasHidrolgicas_3',
+                opacity: 1,
+                color: 'rgba(29,224,233,0.8)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_CuencasHidrolgicas_3');
+        map.getPane('pane_CuencasHidrolgicas_3').style.zIndex = 403;
+        map.getPane('pane_CuencasHidrolgicas_3').style['mix-blend-mode'] = 'normal';
+        var layer_CuencasHidrolgicas_3 = new L.geoJson(json_CuencasHidrolgicas_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_CuencasHidrolgicas_3',
+            layerName: 'layer_CuencasHidrolgicas_3',
+            pane: 'pane_CuencasHidrolgicas_3',
+            onEachFeature: pop_CuencasHidrolgicas_3,
+            style: style_CuencasHidrolgicas_3_0,
+        });
+        bounds_group.addLayer(layer_CuencasHidrolgicas_3);
+        map.addLayer(layer_CuencasHidrolgicas_3);
+        function pop_Acuferos_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Nombre del acuífero:</strong><br />' + (feature.properties['NOM_ACUI'] !== null ? autolinker.link(String(feature.properties['NOM_ACUI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Acuferos_4_0() {
+            return {
+                pane: 'pane_Acuferos_4',
+                opacity: 1,
+                color: 'rgba(18,36,215,0.7)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Acuferos_4');
+        map.getPane('pane_Acuferos_4').style.zIndex = 404;
+        map.getPane('pane_Acuferos_4').style['mix-blend-mode'] = 'normal';
+        var layer_Acuferos_4 = new L.geoJson(json_Acuferos_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Acuferos_4',
+            layerName: 'layer_Acuferos_4',
+            pane: 'pane_Acuferos_4',
+            onEachFeature: pop_Acuferos_4,
+            style: style_Acuferos_4_0,
+        });
+        bounds_group.addLayer(layer_Acuferos_4);
+        map.addLayer(layer_Acuferos_4);
+        function pop_CorredoresBiolgicos_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Corredor Biológico:</strong><br />' + (feature.properties['NOM_CB'] !== null ? autolinker.link(String(feature.properties['NOM_CB']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CorredoresBiolgicos_5_0() {
+            return {
+                pane: 'pane_CorredoresBiolgicos_5',
+                opacity: 1,
+                color: 'rgba(242,153,10,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_CorredoresBiolgicos_5');
+        map.getPane('pane_CorredoresBiolgicos_5').style.zIndex = 405;
+        map.getPane('pane_CorredoresBiolgicos_5').style['mix-blend-mode'] = 'normal';
+        var layer_CorredoresBiolgicos_5 = new L.geoJson(json_CorredoresBiolgicos_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_CorredoresBiolgicos_5',
+            layerName: 'layer_CorredoresBiolgicos_5',
+            pane: 'pane_CorredoresBiolgicos_5',
+            onEachFeature: pop_CorredoresBiolgicos_5,
+            style: style_CorredoresBiolgicos_5_0,
+        });
+        bounds_group.addLayer(layer_CorredoresBiolgicos_5);
+        map.addLayer(layer_CorredoresBiolgicos_5);
+        function pop_reasDestinadasVoluntariamentealaConservacin_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Áreas Destinadas Voluntariamente a la Conservación:</strong><br />' + (feature.properties['ADVC'] !== null ? autolinker.link(String(feature.properties['ADVC']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_reasDestinadasVoluntariamentealaConservacin_6_0() {
+            return {
+                pane: 'pane_reasDestinadasVoluntariamentealaConservacin_6',
+                opacity: 1,
+                color: 'rgba(235,245,9,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_reasDestinadasVoluntariamentealaConservacin_6');
+        map.getPane('pane_reasDestinadasVoluntariamentealaConservacin_6').style.zIndex = 406;
+        map.getPane('pane_reasDestinadasVoluntariamentealaConservacin_6').style['mix-blend-mode'] = 'normal';
+        var layer_reasDestinadasVoluntariamentealaConservacin_6 = new L.geoJson(json_reasDestinadasVoluntariamentealaConservacin_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_reasDestinadasVoluntariamentealaConservacin_6',
+            layerName: 'layer_reasDestinadasVoluntariamentealaConservacin_6',
+            pane: 'pane_reasDestinadasVoluntariamentealaConservacin_6',
+            onEachFeature: pop_reasDestinadasVoluntariamentealaConservacin_6,
+            style: style_reasDestinadasVoluntariamentealaConservacin_6_0,
+        });
+        bounds_group.addLayer(layer_reasDestinadasVoluntariamentealaConservacin_6);
+        map.addLayer(layer_reasDestinadasVoluntariamentealaConservacin_6);
+        function pop_reasNaturalesProtegidas_7(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Nombre de ANP </strong><br />' + (feature.properties['NOMBRE'] !== null ? autolinker.link(String(feature.properties['NOMBRE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tipo:</th>\
+                        <td>' + (feature.properties['TIPO'] !== null ? autolinker.link(String(feature.properties['TIPO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_reasNaturalesProtegidas_7_0() {
+            return {
+                pane: 'pane_reasNaturalesProtegidas_7',
+                interactive: true,
+            }
+        }
+        function style_reasNaturalesProtegidas_7_1() {
+            return {
+                pane: 'pane_reasNaturalesProtegidas_7',
+                opacity: 1,
+                color: 'rgba(73,244,13,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_reasNaturalesProtegidas_7');
+        map.getPane('pane_reasNaturalesProtegidas_7').style.zIndex = 407;
+        map.getPane('pane_reasNaturalesProtegidas_7').style['mix-blend-mode'] = 'normal';
+        var layer_reasNaturalesProtegidas_7 = new L.geoJson.multiStyle(json_reasNaturalesProtegidas_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_reasNaturalesProtegidas_7',
+            layerName: 'layer_reasNaturalesProtegidas_7',
+            pane: 'pane_reasNaturalesProtegidas_7',
+            onEachFeature: pop_reasNaturalesProtegidas_7,
+            styles: [style_reasNaturalesProtegidas_7_0,style_reasNaturalesProtegidas_7_1,]
+        });
+        bounds_group.addLayer(layer_reasNaturalesProtegidas_7);
+        map.addLayer(layer_reasNaturalesProtegidas_7);
+        function pop_AreasNaturalesProtegidasFederales_8(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Área Natural Protegida:</strong><br />' + (feature.properties['NOMBRE'] !== null ? autolinker.link(String(feature.properties['NOMBRE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Categoria de manejo:</th>\
+                        <td>' + (feature.properties['CAT_MANEJO'] !== null ? autolinker.link(String(feature.properties['CAT_MANEJO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie con proyecto de CO2:</th>\
+                        <td>' + (feature.properties['SupCarbon'] !== null ? autolinker.link(String(feature.properties['SupCarbon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_AreasNaturalesProtegidasFederales_8_0() {
+            return {
+                pane: 'pane_AreasNaturalesProtegidasFederales_8',
+                opacity: 1,
+                color: 'rgba(151,237,117,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreasNaturalesProtegidasFederales_8');
+        map.getPane('pane_AreasNaturalesProtegidasFederales_8').style.zIndex = 408;
+        map.getPane('pane_AreasNaturalesProtegidasFederales_8').style['mix-blend-mode'] = 'normal';
+        var layer_AreasNaturalesProtegidasFederales_8 = new L.geoJson(json_AreasNaturalesProtegidasFederales_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreasNaturalesProtegidasFederales_8',
+            layerName: 'layer_AreasNaturalesProtegidasFederales_8',
+            pane: 'pane_AreasNaturalesProtegidasFederales_8',
+            onEachFeature: pop_AreasNaturalesProtegidasFederales_8,
+            style: style_AreasNaturalesProtegidasFederales_8_0,
+        });
+        bounds_group.addLayer(layer_AreasNaturalesProtegidasFederales_8);
+        map.addLayer(layer_AreasNaturalesProtegidasFederales_8);
+        function pop_ProyectosCarbono_9(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>ID CAR</strong><br />' + (feature.properties['CLAVE'] !== null ? autolinker.link(String(feature.properties['CLAVE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Nombre del proyecto:</strong><br />' + (feature.properties['Proyecto'] !== null ? autolinker.link(String(feature.properties['Proyecto']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Entidad Federativa:</th>\
+                        <td>' + (feature.properties['Estado'] !== null ? autolinker.link(String(feature.properties['Estado']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie (km2)</th>\
+                        <td>' + (feature.properties['Sup_ha'] !== null ? autolinker.link(String(feature.properties['Sup_ha']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Estatus</th>\
+                        <td>' + (feature.properties['Status'] !== null ? autolinker.link(String(feature.properties['Status']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Mitigación (tCO2e):</th>\
+                        <td>' + (feature.properties['Creditos'] !== null ? autolinker.link(String(feature.properties['Creditos']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Acuíferos relacionados:</th>\
+                        <td>' + (feature.properties['Acuíferos'] !== null ? autolinker.link(String(feature.properties['Acuíferos']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Cuencas relacionadas:</th>\
+                        <td>' + (feature.properties['Cuencas'] !== null ? autolinker.link(String(feature.properties['Cuencas']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regiones hidrológicas prioritarias relacionadas:</th>\
+                        <td>' + (feature.properties['RHP'] !== null ? autolinker.link(String(feature.properties['RHP']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Superficie de Conservación (km2):</th>\
+                        <td>' + (feature.properties['ZonaConser'] !== null ? autolinker.link(String(feature.properties['ZonaConser']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Zonas de importancia para la biodiversidad:</th>\
+                        <td>' + (feature.properties['ZonasBiodi'] !== null ? autolinker.link(String(feature.properties['ZonasBiodi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Desarrollador:</strong><br />' + (feature.properties['Desarrolla'] !== null ? autolinker.link(String(feature.properties['Desarrolla']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_ProyectosCarbono_9_0() {
+            return {
+                pane: 'pane_ProyectosCarbono_9',
+                opacity: 1,
+                color: 'rgba(25,91,158,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,10,106,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_ProyectosCarbono_9');
+        map.getPane('pane_ProyectosCarbono_9').style.zIndex = 409;
+        map.getPane('pane_ProyectosCarbono_9').style['mix-blend-mode'] = 'normal';
+        var layer_ProyectosCarbono_9 = new L.geoJson(json_ProyectosCarbono_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_ProyectosCarbono_9',
+            layerName: 'layer_ProyectosCarbono_9',
+            pane: 'pane_ProyectosCarbono_9',
+            onEachFeature: pop_ProyectosCarbono_9,
+            style: style_ProyectosCarbono_9_0,
+        });
+        bounds_group.addLayer(layer_ProyectosCarbono_9);
+        map.addLayer(layer_ProyectosCarbono_9);
+        var overlaysTree = [
+            {label: '<img src="legend/ProyectosCarbono_9.png" /> ProyectosCarbono', layer: layer_ProyectosCarbono_9},
+        {label: '<b>Biodiversidad</b>',  selectAllCheckbox: true, children: [
+            {label: '<img src="legend/AreasNaturalesProtegidasFederales_8.png" /> Areas Naturales Protegidas Federales', layer: layer_AreasNaturalesProtegidasFederales_8},
+            {label: '<img src="legend/reasNaturalesProtegidas_7.png" /> Áreas Naturales Protegidas', layer: layer_reasNaturalesProtegidas_7},
+            {label: '<img src="legend/reasDestinadasVoluntariamentealaConservacin_6.png" /> Áreas Destinadas Voluntariamente a la Conservación', layer: layer_reasDestinadasVoluntariamentealaConservacin_6},
+            {label: '<img src="legend/CorredoresBiolgicos_5.png" /> Corredores Biológicos', layer: layer_CorredoresBiolgicos_5},]},
+        {label: '<b>Agua y suelos</b>',  selectAllCheckbox: true, children: [
+            {label: '<img src="legend/Acuferos_4.png" /> Acuíferos', layer: layer_Acuferos_4},
+            {label: '<img src="legend/CuencasHidrolgicas_3.png" /> Cuencas Hidrológicas', layer: layer_CuencasHidrolgicas_3},
+            {label: '<img src="legend/RegionesHidrolgicasPrioritarias_2.png" /> Regiones Hidrológicas Prioritarias', layer: layer_RegionesHidrolgicasPrioritarias_2},]},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_1},
+            {label: "Google Terrain", layer: layer_GoogleTerrain_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"ProyCarbo": "str","Estado": "str","CLAVE": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_ProyCarbo = document.createElement('div');
+            div_ProyCarbo.id = "div_ProyCarbo";
+            div_ProyCarbo.className= "filterselect";
+            document.getElementById("menu").appendChild(div_ProyCarbo);
+            sel_ProyCarbo = document.createElement('select');
+            sel_ProyCarbo.multiple = true;
+            sel_ProyCarbo.size = 2;
+            sel_ProyCarbo.id = "sel_ProyCarbo";
+            var ProyCarbo_options_str = "<option value='' unselected></option>";
+            sel_ProyCarbo.onchange = function(){filterFunc()};
+            ProyCarbo_options_str  += '<option value="No">No</option>';
+            ProyCarbo_options_str  += '<option value="Si">Si</option>';
+            sel_ProyCarbo.innerHTML = ProyCarbo_options_str;
+            div_ProyCarbo.appendChild(sel_ProyCarbo);
+            var lab_ProyCarbo = document.createElement('div');
+            lab_ProyCarbo.innerHTML = 'ProyCarbo';
+            lab_ProyCarbo.className = 'filterlabel';
+            div_ProyCarbo.appendChild(lab_ProyCarbo);
+            var reset_ProyCarbo = document.createElement('div');
+            reset_ProyCarbo.innerHTML = 'clear filter';
+            reset_ProyCarbo.className = 'filterlabel';
+            reset_ProyCarbo.onclick = function() {
+                var options = document.getElementById("sel_ProyCarbo").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_ProyCarbo.appendChild(reset_ProyCarbo);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Estado = document.createElement('div');
+            div_Estado.id = "div_Estado";
+            div_Estado.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Estado);
+            sel_Estado = document.createElement('select');
+            sel_Estado.multiple = true;
+            sel_Estado.size = 10;
+            sel_Estado.id = "sel_Estado";
+            var Estado_options_str = "<option value='' unselected></option>";
+            sel_Estado.onchange = function(){filterFunc()};
+            Estado_options_str  += '<option value="Aguascalientes">Aguascalientes</option>';
+            Estado_options_str  += '<option value="Campeche">Campeche</option>';
+            Estado_options_str  += '<option value="Chiapas">Chiapas</option>';
+            Estado_options_str  += '<option value="Chihuahua">Chihuahua</option>';
+            Estado_options_str  += '<option value="Durango">Durango</option>';
+            Estado_options_str  += '<option value="Estado de México">Estado de México</option>';
+            Estado_options_str  += '<option value="Guerrero">Guerrero</option>';
+            Estado_options_str  += '<option value="Hidalgo">Hidalgo</option>';
+            Estado_options_str  += '<option value="Jalisco">Jalisco</option>';
+            Estado_options_str  += '<option value="Michoacán">Michoacán</option>';
+            Estado_options_str  += '<option value="Oaxaca">Oaxaca</option>';
+            Estado_options_str  += '<option value="Puebla">Puebla</option>';
+            Estado_options_str  += '<option value="Querétaro">Querétaro</option>';
+            Estado_options_str  += '<option value="Quintana Roo">Quintana Roo</option>';
+            Estado_options_str  += '<option value="Tabasco">Tabasco</option>';
+            Estado_options_str  += '<option value="Tlaxcala">Tlaxcala</option>';
+            Estado_options_str  += '<option value="Veracruz">Veracruz</option>';
+            Estado_options_str  += '<option value="Yucatán">Yucatán</option>';
+            sel_Estado.innerHTML = Estado_options_str;
+            div_Estado.appendChild(sel_Estado);
+            var lab_Estado = document.createElement('div');
+            lab_Estado.innerHTML = 'Estado';
+            lab_Estado.className = 'filterlabel';
+            div_Estado.appendChild(lab_Estado);
+            var reset_Estado = document.createElement('div');
+            reset_Estado.innerHTML = 'clear filter';
+            reset_Estado.className = 'filterlabel';
+            reset_Estado.onclick = function() {
+                var options = document.getElementById("sel_Estado").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Estado.appendChild(reset_Estado);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_CLAVE = document.createElement('div');
+            div_CLAVE.id = "div_CLAVE";
+            div_CLAVE.className= "filterselect";
+            document.getElementById("menu").appendChild(div_CLAVE);
+            sel_CLAVE = document.createElement('select');
+            sel_CLAVE.multiple = true;
+            sel_CLAVE.size = 10;
+            sel_CLAVE.id = "sel_CLAVE";
+            var CLAVE_options_str = "<option value='' unselected></option>";
+            sel_CLAVE.onchange = function(){filterFunc()};
+            CLAVE_options_str  += '<option value="CAR1282">CAR1282</option>';
+            CLAVE_options_str  += '<option value="CAR1285">CAR1285</option>';
+            CLAVE_options_str  += '<option value="CAR1325">CAR1325</option>';
+            CLAVE_options_str  += '<option value="CAR1333">CAR1333</option>';
+            CLAVE_options_str  += '<option value="CAR1344">CAR1344</option>';
+            CLAVE_options_str  += '<option value="CAR1345">CAR1345</option>';
+            CLAVE_options_str  += '<option value="CAR1347">CAR1347</option>';
+            CLAVE_options_str  += '<option value="CAR1348">CAR1348</option>';
+            CLAVE_options_str  += '<option value="CAR1350">CAR1350</option>';
+            CLAVE_options_str  += '<option value="CAR1351">CAR1351</option>';
+            CLAVE_options_str  += '<option value="CAR1352">CAR1352</option>';
+            CLAVE_options_str  += '<option value="CAR1353">CAR1353</option>';
+            CLAVE_options_str  += '<option value="CAR1354">CAR1354</option>';
+            CLAVE_options_str  += '<option value="CAR1355">CAR1355</option>';
+            CLAVE_options_str  += '<option value="CAR1356">CAR1356</option>';
+            CLAVE_options_str  += '<option value="CAR1357">CAR1357</option>';
+            CLAVE_options_str  += '<option value="CAR1358">CAR1358</option>';
+            CLAVE_options_str  += '<option value="CAR1359">CAR1359</option>';
+            CLAVE_options_str  += '<option value="CAR1360">CAR1360</option>';
+            CLAVE_options_str  += '<option value="CAR1361">CAR1361</option>';
+            CLAVE_options_str  += '<option value="CAR1362">CAR1362</option>';
+            CLAVE_options_str  += '<option value="CAR1363">CAR1363</option>';
+            CLAVE_options_str  += '<option value="CAR1364">CAR1364</option>';
+            CLAVE_options_str  += '<option value="CAR1365">CAR1365</option>';
+            CLAVE_options_str  += '<option value="CAR1366">CAR1366</option>';
+            CLAVE_options_str  += '<option value="CAR1375">CAR1375</option>';
+            CLAVE_options_str  += '<option value="CAR1387">CAR1387</option>';
+            CLAVE_options_str  += '<option value="CAR1388">CAR1388</option>';
+            CLAVE_options_str  += '<option value="CAR1392">CAR1392</option>';
+            CLAVE_options_str  += '<option value="CAR1399">CAR1399</option>';
+            CLAVE_options_str  += '<option value="CAR1411">CAR1411</option>';
+            CLAVE_options_str  += '<option value="CAR1415">CAR1415</option>';
+            CLAVE_options_str  += '<option value="CAR1428">CAR1428</option>';
+            CLAVE_options_str  += '<option value="CAR1429">CAR1429</option>';
+            CLAVE_options_str  += '<option value="CAR1432">CAR1432</option>';
+            CLAVE_options_str  += '<option value="CAR1433">CAR1433</option>';
+            CLAVE_options_str  += '<option value="CAR1434">CAR1434</option>';
+            CLAVE_options_str  += '<option value="CAR1435">CAR1435</option>';
+            CLAVE_options_str  += '<option value="CAR1437">CAR1437</option>';
+            CLAVE_options_str  += '<option value="CAR1438">CAR1438</option>';
+            CLAVE_options_str  += '<option value="CAR1440">CAR1440</option>';
+            CLAVE_options_str  += '<option value="CAR1445">CAR1445</option>';
+            CLAVE_options_str  += '<option value="CAR1446">CAR1446</option>';
+            CLAVE_options_str  += '<option value="CAR1447">CAR1447</option>';
+            CLAVE_options_str  += '<option value="CAR1448">CAR1448</option>';
+            CLAVE_options_str  += '<option value="CAR1449">CAR1449</option>';
+            CLAVE_options_str  += '<option value="CAR1450">CAR1450</option>';
+            CLAVE_options_str  += '<option value="CAR1451">CAR1451</option>';
+            CLAVE_options_str  += '<option value="CAR1452">CAR1452</option>';
+            CLAVE_options_str  += '<option value="CAR1453">CAR1453</option>';
+            CLAVE_options_str  += '<option value="CAR1454">CAR1454</option>';
+            CLAVE_options_str  += '<option value="CAR1455">CAR1455</option>';
+            CLAVE_options_str  += '<option value="CAR1461">CAR1461</option>';
+            CLAVE_options_str  += '<option value="CAR1462">CAR1462</option>';
+            CLAVE_options_str  += '<option value="CAR1464">CAR1464</option>';
+            CLAVE_options_str  += '<option value="CAR1465">CAR1465</option>';
+            CLAVE_options_str  += '<option value="CAR1484">CAR1484</option>';
+            CLAVE_options_str  += '<option value="CAR1485">CAR1485</option>';
+            CLAVE_options_str  += '<option value="CAR1486">CAR1486</option>';
+            CLAVE_options_str  += '<option value="CAR1494">CAR1494</option>';
+            CLAVE_options_str  += '<option value="CAR1495">CAR1495</option>';
+            CLAVE_options_str  += '<option value="CAR1496">CAR1496</option>';
+            CLAVE_options_str  += '<option value="CAR1497">CAR1497</option>';
+            CLAVE_options_str  += '<option value="CAR1499">CAR1499</option>';
+            CLAVE_options_str  += '<option value="CAR1500">CAR1500</option>';
+            CLAVE_options_str  += '<option value="CAR1508">CAR1508</option>';
+            CLAVE_options_str  += '<option value="CAR1509">CAR1509</option>';
+            CLAVE_options_str  += '<option value="CAR1510">CAR1510</option>';
+            CLAVE_options_str  += '<option value="CAR1511">CAR1511</option>';
+            CLAVE_options_str  += '<option value="CAR1514">CAR1514</option>';
+            CLAVE_options_str  += '<option value="CAR1521">CAR1521</option>';
+            CLAVE_options_str  += '<option value="CAR1522">CAR1522</option>';
+            CLAVE_options_str  += '<option value="CAR1524">CAR1524</option>';
+            CLAVE_options_str  += '<option value="CAR1525">CAR1525</option>';
+            CLAVE_options_str  += '<option value="CAR1531">CAR1531</option>';
+            CLAVE_options_str  += '<option value="CAR1532">CAR1532</option>';
+            CLAVE_options_str  += '<option value="CAR1535">CAR1535</option>';
+            CLAVE_options_str  += '<option value="CAR1536">CAR1536</option>';
+            CLAVE_options_str  += '<option value="CAR1537">CAR1537</option>';
+            CLAVE_options_str  += '<option value="CAR1538">CAR1538</option>';
+            CLAVE_options_str  += '<option value="CAR1539">CAR1539</option>';
+            CLAVE_options_str  += '<option value="CAR1540">CAR1540</option>';
+            CLAVE_options_str  += '<option value="CAR1542">CAR1542</option>';
+            CLAVE_options_str  += '<option value="CAR1543">CAR1543</option>';
+            CLAVE_options_str  += '<option value="CAR1545">CAR1545</option>';
+            CLAVE_options_str  += '<option value="CAR1546">CAR1546</option>';
+            CLAVE_options_str  += '<option value="CAR1547">CAR1547</option>';
+            CLAVE_options_str  += '<option value="CAR1548">CAR1548</option>';
+            CLAVE_options_str  += '<option value="CAR1550">CAR1550</option>';
+            CLAVE_options_str  += '<option value="CAR1552">CAR1552</option>';
+            CLAVE_options_str  += '<option value="CAR1553">CAR1553</option>';
+            CLAVE_options_str  += '<option value="CAR1557">CAR1557</option>';
+            CLAVE_options_str  += '<option value="CAR1565">CAR1565</option>';
+            CLAVE_options_str  += '<option value="CAR1566">CAR1566</option>';
+            CLAVE_options_str  += '<option value="CAR1567">CAR1567</option>';
+            CLAVE_options_str  += '<option value="CAR1568">CAR1568</option>';
+            CLAVE_options_str  += '<option value="CAR1569">CAR1569</option>';
+            CLAVE_options_str  += '<option value="CAR1570">CAR1570</option>';
+            CLAVE_options_str  += '<option value="CAR1571">CAR1571</option>';
+            CLAVE_options_str  += '<option value="CAR1573">CAR1573</option>';
+            CLAVE_options_str  += '<option value="CAR1574">CAR1574</option>';
+            CLAVE_options_str  += '<option value="CAR1577">CAR1577</option>';
+            CLAVE_options_str  += '<option value="CAR1584">CAR1584</option>';
+            CLAVE_options_str  += '<option value="CAR1586">CAR1586</option>';
+            CLAVE_options_str  += '<option value="CAR1587">CAR1587</option>';
+            CLAVE_options_str  += '<option value="CAR1588">CAR1588</option>';
+            CLAVE_options_str  += '<option value="CAR1589">CAR1589</option>';
+            CLAVE_options_str  += '<option value="CAR1590">CAR1590</option>';
+            CLAVE_options_str  += '<option value="CAR1591">CAR1591</option>';
+            CLAVE_options_str  += '<option value="CAR1593">CAR1593</option>';
+            CLAVE_options_str  += '<option value="CAR1599">CAR1599</option>';
+            CLAVE_options_str  += '<option value="CAR1600">CAR1600</option>';
+            CLAVE_options_str  += '<option value="CAR1601">CAR1601</option>';
+            CLAVE_options_str  += '<option value="CAR1602">CAR1602</option>';
+            CLAVE_options_str  += '<option value="CAR1603">CAR1603</option>';
+            CLAVE_options_str  += '<option value="CAR1604">CAR1604</option>';
+            CLAVE_options_str  += '<option value="CAR1606">CAR1606</option>';
+            CLAVE_options_str  += '<option value="CAR1607">CAR1607</option>';
+            CLAVE_options_str  += '<option value="CAR1608">CAR1608</option>';
+            CLAVE_options_str  += '<option value="CAR1609">CAR1609</option>';
+            CLAVE_options_str  += '<option value="CAR1610">CAR1610</option>';
+            CLAVE_options_str  += '<option value="CAR1611">CAR1611</option>';
+            CLAVE_options_str  += '<option value="CAR1612">CAR1612</option>';
+            CLAVE_options_str  += '<option value="CAR1613">CAR1613</option>';
+            CLAVE_options_str  += '<option value="CAR1621">CAR1621</option>';
+            CLAVE_options_str  += '<option value="CAR1622">CAR1622</option>';
+            CLAVE_options_str  += '<option value="CAR1623">CAR1623</option>';
+            CLAVE_options_str  += '<option value="CAR1625">CAR1625</option>';
+            CLAVE_options_str  += '<option value="CAR1626">CAR1626</option>';
+            CLAVE_options_str  += '<option value="CAR1629">CAR1629</option>';
+            CLAVE_options_str  += '<option value="CAR1630">CAR1630</option>';
+            CLAVE_options_str  += '<option value="CAR1632">CAR1632</option>';
+            CLAVE_options_str  += '<option value="CAR1633">CAR1633</option>';
+            CLAVE_options_str  += '<option value="CAR1635">CAR1635</option>';
+            CLAVE_options_str  += '<option value="CAR1636">CAR1636</option>';
+            CLAVE_options_str  += '<option value="CAR1637">CAR1637</option>';
+            CLAVE_options_str  += '<option value="CAR1638">CAR1638</option>';
+            CLAVE_options_str  += '<option value="CAR1642">CAR1642</option>';
+            CLAVE_options_str  += '<option value="CAR1643">CAR1643</option>';
+            CLAVE_options_str  += '<option value="CAR1644">CAR1644</option>';
+            CLAVE_options_str  += '<option value="CAR1645">CAR1645</option>';
+            CLAVE_options_str  += '<option value="CAR1657">CAR1657</option>';
+            CLAVE_options_str  += '<option value="CAR1658">CAR1658</option>';
+            CLAVE_options_str  += '<option value="CAR1659">CAR1659</option>';
+            CLAVE_options_str  += '<option value="CAR1660">CAR1660</option>';
+            CLAVE_options_str  += '<option value="CAR1661">CAR1661</option>';
+            CLAVE_options_str  += '<option value="CAR1663">CAR1663</option>';
+            CLAVE_options_str  += '<option value="CAR1664">CAR1664</option>';
+            CLAVE_options_str  += '<option value="CAR1667">CAR1667</option>';
+            CLAVE_options_str  += '<option value="CAR1668">CAR1668</option>';
+            CLAVE_options_str  += '<option value="CAR1669">CAR1669</option>';
+            CLAVE_options_str  += '<option value="CAR1671">CAR1671</option>';
+            CLAVE_options_str  += '<option value="CAR1674">CAR1674</option>';
+            CLAVE_options_str  += '<option value="CAR1675">CAR1675</option>';
+            CLAVE_options_str  += '<option value="CAR1677">CAR1677</option>';
+            CLAVE_options_str  += '<option value="CAR1678">CAR1678</option>';
+            CLAVE_options_str  += '<option value="CAR1679">CAR1679</option>';
+            CLAVE_options_str  += '<option value="CAR1680">CAR1680</option>';
+            CLAVE_options_str  += '<option value="CAR1681">CAR1681</option>';
+            CLAVE_options_str  += '<option value="CAR1686">CAR1686</option>';
+            CLAVE_options_str  += '<option value="CAR1687">CAR1687</option>';
+            CLAVE_options_str  += '<option value="CAR1688">CAR1688</option>';
+            CLAVE_options_str  += '<option value="CAR1689">CAR1689</option>';
+            CLAVE_options_str  += '<option value="CAR1690">CAR1690</option>';
+            CLAVE_options_str  += '<option value="CAR1710">CAR1710</option>';
+            CLAVE_options_str  += '<option value="CAR1712">CAR1712</option>';
+            CLAVE_options_str  += '<option value="CAR1713">CAR1713</option>';
+            CLAVE_options_str  += '<option value="CAR1714">CAR1714</option>';
+            CLAVE_options_str  += '<option value="CAR1715">CAR1715</option>';
+            CLAVE_options_str  += '<option value="CAR1716">CAR1716</option>';
+            CLAVE_options_str  += '<option value="CAR1717">CAR1717</option>';
+            CLAVE_options_str  += '<option value="CAR1718">CAR1718</option>';
+            CLAVE_options_str  += '<option value="CAR1719">CAR1719</option>';
+            CLAVE_options_str  += '<option value="CAR1720">CAR1720</option>';
+            CLAVE_options_str  += '<option value="CAR1721">CAR1721</option>';
+            CLAVE_options_str  += '<option value="CAR1723">CAR1723</option>';
+            CLAVE_options_str  += '<option value="CAR1724">CAR1724</option>';
+            CLAVE_options_str  += '<option value="CAR1725">CAR1725</option>';
+            CLAVE_options_str  += '<option value="CAR1727">CAR1727</option>';
+            CLAVE_options_str  += '<option value="CAR1728">CAR1728</option>';
+            CLAVE_options_str  += '<option value="CAR1729">CAR1729</option>';
+            CLAVE_options_str  += '<option value="CAR1731">CAR1731</option>';
+            CLAVE_options_str  += '<option value="CAR1735">CAR1735</option>';
+            CLAVE_options_str  += '<option value="CAR1736">CAR1736</option>';
+            CLAVE_options_str  += '<option value="CAR1737">CAR1737</option>';
+            CLAVE_options_str  += '<option value="CAR1739">CAR1739</option>';
+            CLAVE_options_str  += '<option value="CAR1742">CAR1742</option>';
+            CLAVE_options_str  += '<option value="CAR1743">CAR1743</option>';
+            CLAVE_options_str  += '<option value="CAR1744">CAR1744</option>';
+            CLAVE_options_str  += '<option value="CAR1745">CAR1745</option>';
+            CLAVE_options_str  += '<option value="CAR1746">CAR1746</option>';
+            CLAVE_options_str  += '<option value="CAR1747">CAR1747</option>';
+            CLAVE_options_str  += '<option value="CAR1748">CAR1748</option>';
+            CLAVE_options_str  += '<option value="CAR1749">CAR1749</option>';
+            CLAVE_options_str  += '<option value="CAR1767">CAR1767</option>';
+            CLAVE_options_str  += '<option value="CAR1770">CAR1770</option>';
+            CLAVE_options_str  += '<option value="CAR1771">CAR1771</option>';
+            CLAVE_options_str  += '<option value="CAR1772">CAR1772</option>';
+            CLAVE_options_str  += '<option value="CAR1773">CAR1773</option>';
+            CLAVE_options_str  += '<option value="CAR1774">CAR1774</option>';
+            CLAVE_options_str  += '<option value="CAR1775">CAR1775</option>';
+            CLAVE_options_str  += '<option value="CAR1776">CAR1776</option>';
+            CLAVE_options_str  += '<option value="CAR1777">CAR1777</option>';
+            CLAVE_options_str  += '<option value="CAR1778">CAR1778</option>';
+            CLAVE_options_str  += '<option value="CAR1780">CAR1780</option>';
+            CLAVE_options_str  += '<option value="CAR1781">CAR1781</option>';
+            CLAVE_options_str  += '<option value="CAR1784">CAR1784</option>';
+            CLAVE_options_str  += '<option value="CAR1785">CAR1785</option>';
+            CLAVE_options_str  += '<option value="CAR1786">CAR1786</option>';
+            CLAVE_options_str  += '<option value="CAR1787">CAR1787</option>';
+            CLAVE_options_str  += '<option value="CAR1789">CAR1789</option>';
+            CLAVE_options_str  += '<option value="CAR1792">CAR1792</option>';
+            CLAVE_options_str  += '<option value="CAR1793">CAR1793</option>';
+            CLAVE_options_str  += '<option value="CAR1797">CAR1797</option>';
+            CLAVE_options_str  += '<option value="CAR1798">CAR1798</option>';
+            CLAVE_options_str  += '<option value="CAR1799">CAR1799</option>';
+            CLAVE_options_str  += '<option value="CAR1801">CAR1801</option>';
+            CLAVE_options_str  += '<option value="CAR1802">CAR1802</option>';
+            CLAVE_options_str  += '<option value="CAR1804">CAR1804</option>';
+            CLAVE_options_str  += '<option value="CAR1809">CAR1809</option>';
+            CLAVE_options_str  += '<option value="CAR1810">CAR1810</option>';
+            CLAVE_options_str  += '<option value="CAR1811">CAR1811</option>';
+            CLAVE_options_str  += '<option value="CAR1812">CAR1812</option>';
+            CLAVE_options_str  += '<option value="CAR1813">CAR1813</option>';
+            CLAVE_options_str  += '<option value="CAR1814">CAR1814</option>';
+            CLAVE_options_str  += '<option value="CAR1818">CAR1818</option>';
+            CLAVE_options_str  += '<option value="CAR1820">CAR1820</option>';
+            CLAVE_options_str  += '<option value="CAR1823">CAR1823</option>';
+            CLAVE_options_str  += '<option value="CAR1824">CAR1824</option>';
+            CLAVE_options_str  += '<option value="CAR1825">CAR1825</option>';
+            CLAVE_options_str  += '<option value="CAR1826">CAR1826</option>';
+            CLAVE_options_str  += '<option value="CAR1827">CAR1827</option>';
+            CLAVE_options_str  += '<option value="CAR1828">CAR1828</option>';
+            CLAVE_options_str  += '<option value="CAR1829">CAR1829</option>';
+            CLAVE_options_str  += '<option value="CAR1830">CAR1830</option>';
+            CLAVE_options_str  += '<option value="CAR1831">CAR1831</option>';
+            CLAVE_options_str  += '<option value="CAR1833">CAR1833</option>';
+            CLAVE_options_str  += '<option value="CAR1835">CAR1835</option>';
+            CLAVE_options_str  += '<option value="CAR1842">CAR1842</option>';
+            CLAVE_options_str  += '<option value="CAR1847">CAR1847</option>';
+            CLAVE_options_str  += '<option value="CAR1850">CAR1850</option>';
+            CLAVE_options_str  += '<option value="CAR1852">CAR1852</option>';
+            CLAVE_options_str  += '<option value="CAR1853">CAR1853</option>';
+            CLAVE_options_str  += '<option value="CAR1854">CAR1854</option>';
+            CLAVE_options_str  += '<option value="CAR1855">CAR1855</option>';
+            CLAVE_options_str  += '<option value="CAR1856">CAR1856</option>';
+            CLAVE_options_str  += '<option value="CAR1857">CAR1857</option>';
+            CLAVE_options_str  += '<option value="CAR1858">CAR1858</option>';
+            CLAVE_options_str  += '<option value="CAR1859">CAR1859</option>';
+            CLAVE_options_str  += '<option value="CAR1863">CAR1863</option>';
+            CLAVE_options_str  += '<option value="CAR1864">CAR1864</option>';
+            CLAVE_options_str  += '<option value="CAR1865">CAR1865</option>';
+            CLAVE_options_str  += '<option value="CAR1868">CAR1868</option>';
+            CLAVE_options_str  += '<option value="CAR1869">CAR1869</option>';
+            CLAVE_options_str  += '<option value="CAR1870">CAR1870</option>';
+            CLAVE_options_str  += '<option value="CAR1873">CAR1873</option>';
+            CLAVE_options_str  += '<option value="CAR1875">CAR1875</option>';
+            CLAVE_options_str  += '<option value="CAR1876">CAR1876</option>';
+            CLAVE_options_str  += '<option value="CAR1877">CAR1877</option>';
+            CLAVE_options_str  += '<option value="CAR1883">CAR1883</option>';
+            CLAVE_options_str  += '<option value="CAR1884">CAR1884</option>';
+            CLAVE_options_str  += '<option value="CAR1889">CAR1889</option>';
+            CLAVE_options_str  += '<option value="CAR1893">CAR1893</option>';
+            CLAVE_options_str  += '<option value="CAR1894">CAR1894</option>';
+            CLAVE_options_str  += '<option value="CAR1895">CAR1895</option>';
+            CLAVE_options_str  += '<option value="CAR1896">CAR1896</option>';
+            CLAVE_options_str  += '<option value="CAR1897">CAR1897</option>';
+            CLAVE_options_str  += '<option value="CAR1899">CAR1899</option>';
+            CLAVE_options_str  += '<option value="CAR1906">CAR1906</option>';
+            CLAVE_options_str  += '<option value="CAR1907">CAR1907</option>';
+            CLAVE_options_str  += '<option value="CAR1908">CAR1908</option>';
+            CLAVE_options_str  += '<option value="CAR1921">CAR1921</option>';
+            CLAVE_options_str  += '<option value="CAR1922">CAR1922</option>';
+            CLAVE_options_str  += '<option value="CAR1924">CAR1924</option>';
+            CLAVE_options_str  += '<option value="CAR1925">CAR1925</option>';
+            CLAVE_options_str  += '<option value="CAR1926">CAR1926</option>';
+            CLAVE_options_str  += '<option value="CAR1927">CAR1927</option>';
+            CLAVE_options_str  += '<option value="CAR1928">CAR1928</option>';
+            CLAVE_options_str  += '<option value="CAR1929">CAR1929</option>';
+            CLAVE_options_str  += '<option value="CAR1931">CAR1931</option>';
+            CLAVE_options_str  += '<option value="CAR1932">CAR1932</option>';
+            CLAVE_options_str  += '<option value="CAR1933">CAR1933</option>';
+            CLAVE_options_str  += '<option value="CAR1934">CAR1934</option>';
+            CLAVE_options_str  += '<option value="CAR1935">CAR1935</option>';
+            CLAVE_options_str  += '<option value="CAR1936">CAR1936</option>';
+            CLAVE_options_str  += '<option value="CAR1937">CAR1937</option>';
+            CLAVE_options_str  += '<option value="CAR1938">CAR1938</option>';
+            CLAVE_options_str  += '<option value="CAR1939">CAR1939</option>';
+            CLAVE_options_str  += '<option value="CAR1941">CAR1941</option>';
+            CLAVE_options_str  += '<option value="CAR1942">CAR1942</option>';
+            CLAVE_options_str  += '<option value="CAR1943">CAR1943</option>';
+            CLAVE_options_str  += '<option value="CAR1944">CAR1944</option>';
+            CLAVE_options_str  += '<option value="CAR1945">CAR1945</option>';
+            CLAVE_options_str  += '<option value="CAR1946">CAR1946</option>';
+            CLAVE_options_str  += '<option value="CAR1949">CAR1949</option>';
+            CLAVE_options_str  += '<option value="CAR1950">CAR1950</option>';
+            CLAVE_options_str  += '<option value="CAR1951">CAR1951</option>';
+            CLAVE_options_str  += '<option value="CAR1952">CAR1952</option>';
+            CLAVE_options_str  += '<option value="CAR1955">CAR1955</option>';
+            CLAVE_options_str  += '<option value="CAR1956">CAR1956</option>';
+            CLAVE_options_str  += '<option value="CAR1958">CAR1958</option>';
+            CLAVE_options_str  += '<option value="CAR1963">CAR1963</option>';
+            CLAVE_options_str  += '<option value="CAR1964">CAR1964</option>';
+            CLAVE_options_str  += '<option value="CAR1967">CAR1967</option>';
+            CLAVE_options_str  += '<option value="CAR1972">CAR1972</option>';
+            CLAVE_options_str  += '<option value="CAR1973">CAR1973</option>';
+            CLAVE_options_str  += '<option value="CAR1975">CAR1975</option>';
+            CLAVE_options_str  += '<option value="CAR1979">CAR1979</option>';
+            CLAVE_options_str  += '<option value="CAR1982">CAR1982</option>';
+            CLAVE_options_str  += '<option value="CAR1983">CAR1983</option>';
+            CLAVE_options_str  += '<option value="CAR1984">CAR1984</option>';
+            CLAVE_options_str  += '<option value="CAR1985">CAR1985</option>';
+            CLAVE_options_str  += '<option value="CAR1986">CAR1986</option>';
+            CLAVE_options_str  += '<option value="CAR1991">CAR1991</option>';
+            CLAVE_options_str  += '<option value="CAR1995">CAR1995</option>';
+            CLAVE_options_str  += '<option value="CAR1998">CAR1998</option>';
+            CLAVE_options_str  += '<option value="CAR1999">CAR1999</option>';
+            CLAVE_options_str  += '<option value="CAR2000">CAR2000</option>';
+            CLAVE_options_str  += '<option value="CAR2001">CAR2001</option>';
+            CLAVE_options_str  += '<option value="CAR2002">CAR2002</option>';
+            CLAVE_options_str  += '<option value="CAR2004">CAR2004</option>';
+            CLAVE_options_str  += '<option value="CAR2005">CAR2005</option>';
+            CLAVE_options_str  += '<option value="CAR2006">CAR2006</option>';
+            CLAVE_options_str  += '<option value="CAR2007">CAR2007</option>';
+            CLAVE_options_str  += '<option value="CAR2008">CAR2008</option>';
+            CLAVE_options_str  += '<option value="CAR2009">CAR2009</option>';
+            CLAVE_options_str  += '<option value="CAR2010">CAR2010</option>';
+            CLAVE_options_str  += '<option value="CAR2011">CAR2011</option>';
+            CLAVE_options_str  += '<option value="CAR2012">CAR2012</option>';
+            CLAVE_options_str  += '<option value="CAR2013">CAR2013</option>';
+            CLAVE_options_str  += '<option value="CAR2014">CAR2014</option>';
+            CLAVE_options_str  += '<option value="CAR2015">CAR2015</option>';
+            CLAVE_options_str  += '<option value="CAR2016">CAR2016</option>';
+            CLAVE_options_str  += '<option value="CAR2017">CAR2017</option>';
+            CLAVE_options_str  += '<option value="CAR2018">CAR2018</option>';
+            CLAVE_options_str  += '<option value="CAR2019">CAR2019</option>';
+            CLAVE_options_str  += '<option value="CAR2020">CAR2020</option>';
+            CLAVE_options_str  += '<option value="CAR2021">CAR2021</option>';
+            CLAVE_options_str  += '<option value="CAR2022">CAR2022</option>';
+            CLAVE_options_str  += '<option value="CAR2023">CAR2023</option>';
+            CLAVE_options_str  += '<option value="CAR2025">CAR2025</option>';
+            CLAVE_options_str  += '<option value="CAR2026">CAR2026</option>';
+            CLAVE_options_str  += '<option value="CAR2027">CAR2027</option>';
+            CLAVE_options_str  += '<option value="CAR2028">CAR2028</option>';
+            CLAVE_options_str  += '<option value="CAR2032">CAR2032</option>';
+            CLAVE_options_str  += '<option value="CAR2033">CAR2033</option>';
+            CLAVE_options_str  += '<option value="CAR2034">CAR2034</option>';
+            CLAVE_options_str  += '<option value="CAR2035">CAR2035</option>';
+            CLAVE_options_str  += '<option value="CAR2040">CAR2040</option>';
+            CLAVE_options_str  += '<option value="CAR2049">CAR2049</option>';
+            CLAVE_options_str  += '<option value="CAR2068">CAR2068</option>';
+            CLAVE_options_str  += '<option value="CAR2069">CAR2069</option>';
+            CLAVE_options_str  += '<option value="CAR2070">CAR2070</option>';
+            CLAVE_options_str  += '<option value="CAR2071">CAR2071</option>';
+            CLAVE_options_str  += '<option value="CAR2072">CAR2072</option>';
+            CLAVE_options_str  += '<option value="CAR2073">CAR2073</option>';
+            CLAVE_options_str  += '<option value="CAR2074">CAR2074</option>';
+            CLAVE_options_str  += '<option value="CAR2075">CAR2075</option>';
+            CLAVE_options_str  += '<option value="CAR2076">CAR2076</option>';
+            CLAVE_options_str  += '<option value="CAR2077">CAR2077</option>';
+            CLAVE_options_str  += '<option value="CAR2081">CAR2081</option>';
+            CLAVE_options_str  += '<option value="CAR2082">CAR2082</option>';
+            CLAVE_options_str  += '<option value="CAR2083">CAR2083</option>';
+            CLAVE_options_str  += '<option value="CAR2084">CAR2084</option>';
+            CLAVE_options_str  += '<option value="CAR2085">CAR2085</option>';
+            CLAVE_options_str  += '<option value="CAR2094">CAR2094</option>';
+            CLAVE_options_str  += '<option value="CAR2095">CAR2095</option>';
+            CLAVE_options_str  += '<option value="CAR2100">CAR2100</option>';
+            CLAVE_options_str  += '<option value="CAR2104">CAR2104</option>';
+            CLAVE_options_str  += '<option value="CAR2116">CAR2116</option>';
+            CLAVE_options_str  += '<option value="CAR2123">CAR2123</option>';
+            CLAVE_options_str  += '<option value="CAR2124">CAR2124</option>';
+            CLAVE_options_str  += '<option value="CAR2125">CAR2125</option>';
+            CLAVE_options_str  += '<option value="CAR2126">CAR2126</option>';
+            CLAVE_options_str  += '<option value="CAR2127">CAR2127</option>';
+            CLAVE_options_str  += '<option value="CAR2128">CAR2128</option>';
+            CLAVE_options_str  += '<option value="CAR2130">CAR2130</option>';
+            CLAVE_options_str  += '<option value="CAR2131">CAR2131</option>';
+            CLAVE_options_str  += '<option value="CAR2133">CAR2133</option>';
+            CLAVE_options_str  += '<option value="CAR2141">CAR2141</option>';
+            CLAVE_options_str  += '<option value="CAR2142">CAR2142</option>';
+            CLAVE_options_str  += '<option value="CAR2156">CAR2156</option>';
+            CLAVE_options_str  += '<option value="CAR2174">CAR2174</option>';
+            CLAVE_options_str  += '<option value="CAR2175">CAR2175</option>';
+            CLAVE_options_str  += '<option value="CAR2179">CAR2179</option>';
+            CLAVE_options_str  += '<option value="CAR2180">CAR2180</option>';
+            CLAVE_options_str  += '<option value="CAR2181">CAR2181</option>';
+            CLAVE_options_str  += '<option value="CAR2182">CAR2182</option>';
+            CLAVE_options_str  += '<option value="CAR2183">CAR2183</option>';
+            CLAVE_options_str  += '<option value="CAR2184">CAR2184</option>';
+            CLAVE_options_str  += '<option value="CAR2185">CAR2185</option>';
+            CLAVE_options_str  += '<option value="CAR2187">CAR2187</option>';
+            CLAVE_options_str  += '<option value="CAR2189">CAR2189</option>';
+            CLAVE_options_str  += '<option value="CAR2190">CAR2190</option>';
+            CLAVE_options_str  += '<option value="CAR2192">CAR2192</option>';
+            CLAVE_options_str  += '<option value="CAR2196">CAR2196</option>';
+            CLAVE_options_str  += '<option value="CAR2197">CAR2197</option>';
+            CLAVE_options_str  += '<option value="CAR2199">CAR2199</option>';
+            CLAVE_options_str  += '<option value="CAR2200">CAR2200</option>';
+            CLAVE_options_str  += '<option value="CAR2201">CAR2201</option>';
+            CLAVE_options_str  += '<option value="CAR2202">CAR2202</option>';
+            CLAVE_options_str  += '<option value="CAR2203">CAR2203</option>';
+            CLAVE_options_str  += '<option value="CAR2204">CAR2204</option>';
+            CLAVE_options_str  += '<option value="CAR2205">CAR2205</option>';
+            CLAVE_options_str  += '<option value="CAR2206">CAR2206</option>';
+            CLAVE_options_str  += '<option value="CAR2207">CAR2207</option>';
+            CLAVE_options_str  += '<option value="CAR2216">CAR2216</option>';
+            CLAVE_options_str  += '<option value="CAR2234">CAR2234</option>';
+            CLAVE_options_str  += '<option value="CAR2238">CAR2238</option>';
+            CLAVE_options_str  += '<option value="CAR2243">CAR2243</option>';
+            CLAVE_options_str  += '<option value="CAR2260">CAR2260</option>';
+            CLAVE_options_str  += '<option value="CAR2261">CAR2261</option>';
+            CLAVE_options_str  += '<option value="CAR2277">CAR2277</option>';
+            CLAVE_options_str  += '<option value="CAR2295">CAR2295</option>';
+            CLAVE_options_str  += '<option value="CAR2313">CAR2313</option>';
+            CLAVE_options_str  += '<option value="CAR2321">CAR2321</option>';
+            CLAVE_options_str  += '<option value="CAR2322">CAR2322</option>';
+            sel_CLAVE.innerHTML = CLAVE_options_str;
+            div_CLAVE.appendChild(sel_CLAVE);
+            var lab_CLAVE = document.createElement('div');
+            lab_CLAVE.innerHTML = 'CLAVE';
+            lab_CLAVE.className = 'filterlabel';
+            div_CLAVE.appendChild(lab_CLAVE);
+            var reset_CLAVE = document.createElement('div');
+            reset_CLAVE.innerHTML = 'clear filter';
+            reset_CLAVE.className = 'filterlabel';
+            reset_CLAVE.onclick = function() {
+                var options = document.getElementById("sel_CLAVE").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_CLAVE.appendChild(reset_CLAVE);
+        resetLabels([layer_ProyectosCarbono_9]);
+        map.on("zoomend", function(){
+            resetLabels([layer_ProyectosCarbono_9]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_ProyectosCarbono_9]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_ProyectosCarbono_9]);
+        });
+        </script>        
+    </body>
+</html>
