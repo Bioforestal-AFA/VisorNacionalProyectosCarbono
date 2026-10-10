@@ -930,6 +930,7 @@
 // Evento al marcar / desmarcar la casilla
 			chk_ProyCarbo.onchange = function() {
   		    sel_ProyCarbo.options[0].selected = this.checked;
+			sel_ProyCarbo.options[1].selected = false;
 		    filterFunc();
 			};
 
