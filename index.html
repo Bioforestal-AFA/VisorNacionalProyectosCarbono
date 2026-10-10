@@ -913,13 +913,13 @@
             div_ProyCarbo.className= "filterselect";
             document.getElementById("menu").appendChild(div_ProyCarbo);
            // Crear el contenedor con la casilla y su etiqueta
-			var label_ProyCarbo = document.createElement('label');
-			label_ProyCarbo.style.cursor = 'pointer';
+			///var label_ProyCarbo = document.createElement('label');
+			///label_ProyCarbo.style.cursor = 'pointer';
 
-			var chk_ProyCarbo = document.createElement('input');
-			chk_ProyCarbo.type = 'checkbox';
-			chk_ProyCarbo.id = 'chk_ProyCarbo';
-		chk_ProyCarbo.style.marginRight = '8px';
+			///var chk_ProyCarbo = document.createElement('input');
+			///chk_ProyCarbo.type = 'checkbox';
+			///chk_ProyCarbo.id = 'chk_ProyCarbo';
+		///chk_ProyCarbo.style.marginRight = '8px';
 
 // Crear el elemento select oculto que mantendrá viva la lógica de qgis2web
 			sel_ProyCarbo = document.createElement('select');
@@ -928,10 +928,10 @@
 			sel_ProyCarbo.innerHTML = '<option value="Si">Si</option>';
 
 // Evento al marcar / desmarcar la casilla
-			chk_ProyCarbo.onchange = function() {
-  		    sel_ProyCarbo.options[0].selected = this.checked;
-			filterFunc();
-			};
+			///chk_ProyCarbo.onchange = function() {
+  		    ///sel_ProyCarbo.options[0].selected = this.checked;
+			///filterFunc();
+			///};
 
 			label_ProyCarbo.appendChild(chk_ProyCarbo);
 			label_ProyCarbo.appendChild(document.createTextNode('Áreas con presencia de proyectos de carbono'));
@@ -942,29 +942,18 @@
             //lab_ProyCarbo.innerHTML = 'Áreas con presencia de proyectos de carbono';
             //lab_ProyCarbo.className = 'filterlabel';
             //div_ProyCarbo.appendChild(lab_ProyCarbo);
-            ///var reset_ProyCarbo = document.createElement('div');
-            ///reset_ProyCarbo.innerHTML = 'clear filter';
-            ///reset_ProyCarbo.className = 'filterlabel';
-            ///reset_ProyCarbo.onclick = function() {
-            ///    var options = document.getElementById("sel_ProyCarbo").options;
-			///	for (var i=0; i < options.length; i++) {
-            ///        options[i].selected = false;
-            ///    }
-            ///    filterFunc();
-            ///};
-            ///div_ProyCarbo.appendChild(reset_ProyCarbo);
-			var reset_ProyCarbo = document.createElement('div');
+            var reset_ProyCarbo = document.createElement('div');
             reset_ProyCarbo.innerHTML = 'clear filter';
             reset_ProyCarbo.className = 'filterlabel';
             reset_ProyCarbo.onclick = function() {
                 var options = document.getElementById("sel_ProyCarbo").options;
-                for (var i = 0; i < options.length; i++) {
+				for (var i=0; i < options.length; i++) {
                     options[i].selected = false;
                 }
-                ///chk_ProyCarbo.checked = false;   // desmarca la casilla visualmente
                 filterFunc();
             };
-			///codigo cambiado para el clear filter
+            div_ProyCarbo.appendChild(reset_ProyCarbo);
+			
             div_ProyCarbo.appendChild(reset_ProyCarbo);
             document.getElementById("menu").appendChild(
                 document.createElement("div"));
