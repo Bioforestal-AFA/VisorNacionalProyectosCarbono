@@ -143,6 +143,13 @@
             this._div.innerHTML = '<h2>Visor nacional de proyectos de carbono y co-beneficios ambientales</h2>';
         };
         title.addTo(map);
+		var logo = new L.Control({ position: 'bottomright' });
+		logo.onAdd = function(map) {
+    		var div = L.DomUtil.create('div', 'leaflet-control-logo');
+    		div.innerHTML = '<img src="css/logo.png" style="max-width: 150px; height: auto;">';
+    		return div;
+		};
+		logo.addTo(map);
         var abstract = new L.Control({'position':'bottomleft'});
         abstract.onAdd = function (map) {
             this._div = L.DomUtil.create('div',
