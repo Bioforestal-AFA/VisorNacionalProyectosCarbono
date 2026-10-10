@@ -872,7 +872,36 @@
         document.getElementById("all").appendChild(col2);
         col1.appendChild(mapDiv)
         var Filters = {"ProyCarbo": "str","Estado": "str","CLAVE": "str"};
-        function filterFunc() {
+        function flashFilteredLayers() {
+    // Buscar la capa visible que contiene los elementos filtrados (ej. ProyectosCarbono)
+    if (map.hasLayer(layer_ProyectosCarbono_9)) {
+        var count = 0;
+        var interval = setInterval(function() {
+            layer_ProyectosCarbono_9.eachLayer(function(layer) {
+                if (count % 2 === 0) {
+                    // Estilo de parpadeo (brillo amarillo/rojo)
+                    layer.setStyle({
+                        color: '#ff0000',
+                        fillColor: '#ffff00',
+                        fillOpacity: 0.9,
+                        weight: 3
+                    });
+                } else {
+                    // Restablecer al estilo original
+                    layer_ProyectosCarbono_9.resetStyle(layer);
+                }
+            });
+            count++;
+            if (count >= 6) { // Parpadea 3 veces (6 alternancias) y se detiene
+                clearInterval(interval);
+                layer_ProyectosCarbono_9.eachLayer(function(layer) {
+                    layer_ProyectosCarbono_9.resetStyle(layer);
+                });
+            }
+        }, 300); // Velocidad en milisegundos por parpadeo
+    }
+}
+		function filterFunc() {
           map.eachLayer(function(lyr){
           if ("options" in lyr && "dataVar" in lyr["options"]){
             features = this[lyr["options"]["dataVar"]].features.slice(0);
