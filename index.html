@@ -151,19 +151,31 @@
 		};
 		logo.addTo(map);
         var abstract = new L.Control({'position':'bottomleft'});
-        abstract.onAdd = function (map) {
-            this._div = L.DomUtil.create('div',
-            'leaflet-control abstract');
-            this._div.id = 'abstract'
-
-                abstract.show();
-                return this._div;
-            };
-            abstract.show = function () {
-                this._div.classList.remove("abstract");
-                this._div.classList.add("abstractUncollapsed");
-                this._div.innerHTML = 'Visor que permite explorar la distribución geográfica de los proyectos de carbono y la relación con las áreas de conservación, la biodiversidad y los recursos hídricos del país.';
-        };
+abstract.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'leaflet-control abstract');
+    this._div.id = 'abstract';
+    L.DomEvent.disableClickPropagation(this._div);
+    this._div.onclick = function () {
+        if (abstract._div.classList.contains('abstract')) {
+            abstract.show();
+        } else {
+            abstract.hide();
+        }
+    };
+    abstract.hide();
+    return this._div;
+};
+abstract.show = function () {
+    this._div.classList.remove('abstract');
+    this._div.classList.add('abstractUncollapsed');
+    this._div.innerHTML = 'Visor que permite explorar la distribución geográfica de los proyectos de carbono y la relación con las áreas de conservación, la biodiversidad y los recursos hídricos del país.';
+};
+abstract.hide = function () {
+    this._div.classList.remove('abstractUncollapsed');
+    this._div.classList.add('abstract');
+    this._div.innerHTML = '';
+};
+abstract.addTo(map);
         abstract.addTo(map);
         var zoomControl = L.control.zoom({
             position: 'topleft'
@@ -171,6 +183,36 @@
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
+		var statsControl = L.control({ position: 'bottomleft' });
+statsControl.onAdd = function () {
+    this._div = L.DomUtil.create('div', 'leaflet-control info stats-carbono');
+    this._div.style.display = 'none';
+    this._div.innerHTML =
+        '<strong>Total nacional</strong><br>' +
+        'Área bajo esquemas de conservación: <b>20,911 km²</b><br>' +
+        'Superficie de influencia en zonas de recarga e hidrología: <b>36,194 km²</b>';
+    return this._div;
+};
+statsControl.addTo(map);
+		.stats-carbono {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 5px;
+    max-width: 280px;
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+		// Mostrar estadísticas si el filtro de proyectos de carbono incluye "Si"
+var selPC = document.getElementById("sel_ProyCarbo");
+var conProyectos = Array.prototype.some.call(selPC.selectedOptions, function (o) {
+    return o.value === "Si";
+});
+// Opcional: ocultar si hay Estado o ID CAR seleccionado
+// var otros = document.getElementById("sel_Estado").selectedOptions.length > 0 ||
+//             document.getElementById("sel_CLAVE").selectedOptions.length > 0;
+// statsControl._div.style.display = (conProyectos && !otros) ? 'block' : 'none';
+statsControl._div.style.display = conProyectos ? 'block' : 'none';
         map.createPane('pane_GoogleTerrain_0');
         map.getPane('pane_GoogleTerrain_0').style.zIndex = 400;
         var layer_GoogleTerrain_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
