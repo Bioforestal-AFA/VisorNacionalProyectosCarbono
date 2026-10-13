@@ -20,6 +20,15 @@
             padding: 0;
             margin: 0;
         }
+		.stats-carbono {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 5px;
+    max-width: 280px;
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
         </style>
         <title>Visor nacional de proyectos de carbono y co-beneficios ambientales</title>
     </head>
@@ -194,20 +203,6 @@ statsControl.onAdd = function () {
     return this._div;
 };
 statsControl.addTo(map);
-		.stats-carbono {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 8px 12px;
-    border-radius: 5px;
-    max-width: 280px;
-    font-size: 13px;
-    line-height: 1.4;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
-}
-		// Mostrar estadísticas si el filtro de proyectos de carbono incluye "Si"
-var selPC = document.getElementById("sel_ProyCarbo");
-var conProyectos = Array.prototype.some.call(selPC.selectedOptions, function (o) {
-    return o.value === "Si";
-});
 // Opcional: ocultar si hay Estado o ID CAR seleccionado
 // var otros = document.getElementById("sel_Estado").selectedOptions.length > 0 ||
 //             document.getElementById("sel_CLAVE").selectedOptions.length > 0;
@@ -958,14 +953,22 @@ function flashFilteredLayers() {
         }
     }, 300);
 }
-		function filterFunc() {
-          map.eachLayer(function(lyr){
-		    // Parpadear solo si hay algo seleccionado en Estado o ID CAR
-    var hasSelection = ["sel_Estado", "sel_CLAVE"].some(function(id) {
-        return document.getElementById(id).selectedOptions.length > 0;
+	// 1) Definición de la función (va ANTES de filterFunc, fuera de ella)
+	function actualizarStats() {
+    var selPC = document.getElementById("sel_ProyCarbo");
+    if (!selPC) return;
+    var conProyectos = Array.prototype.some.call(selPC.selectedOptions, function (o) {
+        return o.value === "Si";
     });
-    if (hasSelection) flashFilteredLayers();
-          if ("options" in lyr && "dataVar" in lyr["options"]){
+    statsControl._div.style.display = conProyectos ? 'block' : 'none';
+	}
+		function filterFunc() {
+		actualizarStats();
+		var hasSelection = ["sel_Estado", "sel_CLAVE"].some(function(id) {
+        return document.getElementById(id).selectedOptions.length > 0;
+   		 });	
+			map.eachLayer(function(lyr){
+              if ("options" in lyr && "dataVar" in lyr["options"]){
             features = this[lyr["options"]["dataVar"]].features.slice(0);
             try{
               for (key in Filters){
@@ -1051,7 +1054,8 @@ function flashFilteredLayers() {
           this[lyr["options"]["layerName"]].addData(features);
           }
           })
-        }
+        if (hasSelection) flashFilteredLayers();
+		}
             document.getElementById("menu").appendChild(
                 document.createElement("div"));
             var div_ProyCarbo = document.createElement('div');
