@@ -30,9 +30,87 @@
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 }
         </style>
+		/* Fondo difuminado (Velo) */
+.welcome-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4); /* Fondo semi-transparente */
+  backdrop-filter: blur(8px);           /* Efecto de difuminado/desenfoque */
+  -webkit-backdrop-filter: blur(8px);   /* Soporte para Safari */
+  z-index: 10000;                        /* Asegura que quede por encima de Leaflet */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+/* Tarjeta contenedora del mensaje */
+.welcome-modal {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px 40px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.welcome-modal h2 {
+  margin-top: 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.welcome-modal p {
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Botón de acción */
+.welcome-btn {
+  background-color: #15803d; /* Verde acorde a la temática ambiental */
+  color: #ffffff;
+  border: none;
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.welcome-btn:hover {
+  background-color: #166534;
+}
+
+/* Clase auxiliar para ocultar el overlay al hacer clic */
+.hidden-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
         <title>Visor nacional de proyectos de carbono y co-beneficios ambientales</title>
     </head>
     <body>
+		<!-- Modal de bienvenida / Velo difuminado -->
+<div id="welcomeOverlay" class="welcome-overlay">
+  <div class="welcome-modal">
+    <h2>Visor Nacional de Proyectos de Carbono</h2>
+    <p>
+      Bienvenido al visor interactivo. Esta herramienta te permite explorar la distribución geográfica 
+      de los proyectos de carbono en México y su relación con las áreas de conservación, la biodiversidad 
+      y los recursos hídricos del país.
+    </p>
+    <button id="btnEntrar" class="welcome-btn" onclick="cerrarBienvenida()">Explorar Mapa</button>
+  </div>
+</div>
         <div id="map">
         </div>
         <script src="js/qgis2web_expressions.js"></script>
@@ -59,6 +137,12 @@
         <script src="data/AreasNaturalesProtegidasFederales_8.js"></script>
         <script src="data/ProyectosCarbono_9.js"></script>
         <script>
+function cerrarBienvenida() {
+  var overlay = document.getElementById('welcomeOverlay');
+  if (overlay) {
+    overlay.classList.add('hidden-overlay');
+  }
+}
         var highlightLayer;
         function highlightFeature(e) {
             highlightLayer = e.target;
