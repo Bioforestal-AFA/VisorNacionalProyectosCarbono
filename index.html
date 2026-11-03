@@ -95,7 +95,58 @@
   visibility: hidden;
   pointer-events: none;
 }
-		 </style>
+		/* --- ESTILOS PARA EL PANEL LATERAL DE FILTROS --- */
+      #menu {
+        padding: 12px;
+        background-color: #f8fafc;
+        box-sizing: border-box;
+      }
+
+      /* Tarjeta contenedora de cada grupo de filtros */
+      .filter-group {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Títulos de sección con borde verde */
+      .filter-group-title {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #1e293b;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #15803d;
+      }
+
+      /* Ajustes generales para las etiquetas y selects */
+      .filterlabel {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.82rem;
+        margin-bottom: 4px;
+      }
+
+      .filterselect select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px;
+        font-size: 0.85rem;
+        outline: none;
+      }
+
+      .filterselect select:focus {
+        border-color: #15803d;
+      } 
+		</style>
         <title>Visor nacional de proyectos de carbono y co-beneficios ambientales</title>
     </head>
     <body>
