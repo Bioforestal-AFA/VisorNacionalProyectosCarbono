@@ -146,6 +146,62 @@
       .filterselect select:focus {
         border-color: #15803d;
       } 
+		/* --- PERSONALIZACIÓN DEL CONTROL DE CAPAS (LEAFLET) --- */
+      
+      /* Contenedor del panel de capas */
+      .leaflet-control-layers {
+        font-family: system-ui, -apple-system, sans-serif !important;
+        font-size: 0.78rem !important; /* Letra más pequeña y fina */
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 8px 12px !important;
+        max-width: 260px !important; /* Limita el ancho para que no abarque mucho mapa */
+      }
+
+      /* Títulos principales del grupo de capas (Biodiversidad, Agua y suelos) */
+      .leaflet-layerstree-header label b {
+        font-size: 0.82rem !important;
+        font-weight: 700 !important;
+        color: #1e293b !important;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      /* Texto de cada capa individual */
+      .leaflet-layerstree-node label {
+        color: #334155;
+        font-size: 0.76rem !important;
+        line-height: 1.3 !important;
+        cursor: pointer;
+      }
+
+      /* Ajuste de imágenes de leyenda para que se vean proporcionadas */
+      .leaflet-layerstree-node img {
+        vertical-align: middle;
+        margin-right: 4px;
+        max-height: 16px;
+      }
+
+      /* Seccionar los Mapas Base (Google Satellite / Terrain) */
+      .leaflet-layerstree-node:has(span:contains("Google")) {
+        opacity: 0.7;
+        font-size: 0.72rem !important;
+      }
+
+      /* Separador discreto para los mapas de fondo */
+      .base-maps-separator {
+        border-top: 1px solid #e2e8f0;
+        margin: 6px 0;
+        padding-top: 4px;
+      }
+      
+      /* Estilo discreto para los mapas base */
+      .base-map-label {
+        font-size: 0.72rem !important;
+        color: #64748b !important;
+        font-weight: 500;
+      }
 		</style>
         <title>Visor nacional de proyectos de carbono y co-beneficios ambientales</title>
     </head>
@@ -950,19 +1006,35 @@ statsControl.addTo(map);
         });
         bounds_group.addLayer(layer_ProyectosCarbono_9);
         map.addLayer(layer_ProyectosCarbono_9);
-        var overlaysTree = [
-            {label: '<img src="legend/ProyectosCarbono_9.png" /> ProyectosCarbono', layer: layer_ProyectosCarbono_9},
-        {label: '<b>Biodiversidad</b>',  selectAllCheckbox: true, children: [
-            {label: '<img src="legend/AreasNaturalesProtegidasFederales_8.png" /> Áreas Naturales Protegidas Federales', layer: layer_AreasNaturalesProtegidasFederales_8},
-            {label: '<img src="legend/reasNaturalesProtegidas_7.png" /> Áreas Naturales Protegidas', layer: layer_reasNaturalesProtegidas_7},
-            {label: '<img src="legend/reasDestinadasVoluntariamentealaConservacin_6.png" /> Áreas Destinadas Voluntariamente a la Conservación', layer: layer_reasDestinadasVoluntariamentealaConservacin_6},
-            {label: '<img src="legend/CorredoresBiolgicos_5.png" /> Corredores Biológicos', layer: layer_CorredoresBiolgicos_5},]},
-        {label: '<b>Agua y suelos</b>',  selectAllCheckbox: true, children: [
-            {label: '<img src="legend/Acuferos_4.png" /> Acuíferos', layer: layer_Acuferos_4},
-            {label: '<img src="legend/CuencasHidrolgicas_3.png" /> Cuencas Hidrológicas', layer: layer_CuencasHidrolgicas_3},
-            {label: '<img src="legend/RegionesHidrolgicasPrioritarias_2.png" /> Regiones Hidrológicas Prioritarias', layer: layer_RegionesHidrolgicasPrioritarias_2},]},
-            {label: "Google Satellite", layer: layer_GoogleSatellite_1},
-            {label: "Google Terrain", layer: layer_GoogleTerrain_0},]
+ var overlaysTree = [
+  {label: '<img src="legend/ProyectosCarbono_9.png" /> <b>Proyectos Carbono</b>', layer: layer_ProyectosCarbono_9}, 
+  {
+    label: '<b>Biodiversidad</b>',  
+    selectAllCheckbox: true, 
+    children: [
+      {label: '<img src="legend/AreasNaturalesProtegidasFederales_8.png" /> Áreas Naturales Protegidas Federales', layer: layer_AreasNaturalesProtegidasFederales_8}, 
+      {label: '<img src="legend/reasNaturalesProtegidas_7.png" /> Áreas Naturales Protegidas', layer: layer_reasNaturalesProtegidas_7}, 
+      {label: '<img src="legend/reasDestinadasVoluntariamentealaConservacin_6.png" /> Áreas Destinadas Voluntariamente a la Conservación', layer: layer_reasDestinadasVoluntariamentealaConservacin_6}, 
+      {label: '<img src="legend/CorredoresBiolgicos_5.png" /> Corredores Biológicos', layer: layer_CorredoresBiolgicos_5},
+    ]
+  }, 
+  {
+    label: '<b>Agua y suelos</b>',  
+    selectAllCheckbox: true, 
+    children: [
+      {label: '<img src="legend/Acuferos_4.png" /> Acuíferos', layer: layer_Acuferos_4}, 
+      {label: '<img src="legend/CuencasHidrolgicas_3.png" /> Cuencas Hidrológicas', layer: layer_CuencasHidrolgicas_3}, 
+      {label: '<img src="legend/RegionesHidrolgicasPrioritarias_2.png" /> Regiones Hidrológicas Prioritarias', layer: layer_RegionesHidrolgicasPrioritarias_2},
+    ]
+  }, 
+  {
+    label: '<div class="base-maps-separator"><b>Mapas de fondo</b></div>',
+    children: [
+      {label: '<span class="base-map-label">Google Satellite</span>', layer: layer_GoogleSatellite_1}, 
+      {label: '<span class="base-map-label">Google Terrain</span>', layer: layer_GoogleTerrain_0}
+    ]
+  }
+];
         var lay = L.control.layers.tree(null, overlaysTree,{
             //namedToggle: true,
             //selectorBack: false,
