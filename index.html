@@ -20,7 +20,55 @@
             padding: 0;
             margin: 0;
         }
-		.stats-carbono {
+	/* --- ESTILOS PARA EL TOUR GUIADO / GLOBOS DE AYUDA --- */
+      .tour-popover {
+        position: absolute;
+        background: #ffffff;
+        color: #1e293b;
+        border: 2px solid #15803d;
+        border-radius: 10px;
+        padding: 14px 18px;
+        max-width: 280px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        font-family: system-ui, -apple-system, sans-serif;
+        z-index: 10001;
+        animation: tourFadeIn 0.3s ease;
+      }
+
+      .tour-popover h4 {
+        margin: 0 0 6px 0;
+        font-size: 0.9rem;
+        color: #15803d;
+      }
+
+      .tour-popover p {
+        margin: 0 0 12px 0;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        color: #334155;
+      }
+
+      .tour-btn {
+        background-color: #15803d;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 5px;
+        cursor: pointer;
+        float: right;
+      }
+
+      .tour-btn:hover {
+        background-color: #166534;
+      }
+
+      @keyframes tourFadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+			.stats-carbono {
     background: rgba(255, 255, 255, 0.9);
     padding: 8px 12px;
     border-radius: 5px;
@@ -218,6 +266,12 @@
     <button id="btnEntrar" class="welcome-btn" onclick="cerrarBienvenida()">Explorar Mapa</button>
   </div>
 </div>
+		<!-- Elemento dinamico del globo del tour -->
+<div id="tourPopover" class="tour-popover" style="display: none;">
+  <h4 id="tourTitle">Paso 1</h4>
+  <p id="tourText">Texto de la guía...</p>
+  <button id="tourNextBtn" class="tour-btn" onclick="siguientePasoTour()">Siguiente</button>
+</div>
         <div id="map">
         </div>
         <script src="js/qgis2web_expressions.js"></script>
@@ -244,11 +298,78 @@
         <script src="data/AreasNaturalesProtegidasFederales_8.js"></script>
         <script src="data/ProyectosCarbono_9.js"></script>
         <script>
-function cerrarBienvenida() {
-  var overlay = document.getElementById('welcomeOverlay');
-  if (overlay) {
-    overlay.classList.add('hidden-overlay');
+<script>
+  // Variable para rastrear el paso del tour
+  var pasoActualTour = 0;
+
+  function cerrarBienvenida() {
+    var overlay = document.getElementById('welcomeOverlay');
+    if (overlay) {
+      overlay.classList.add('hidden-overlay');
+    }
+    // Iniciar la guía interactiva al cerrar el velo
+    iniciarTourGuiado();
   }
+
+  function iniciarTourGuiado() {
+    pasoActualTour = 1;
+    mostrarPasoTour(pasoActualTour);
+  }
+
+  function mostrarPasoTour(paso) {
+    var popover = document.getElementById('tourPopover');
+    var title = document.getElementById('tourTitle');
+    var text = document.getElementById('tourText');
+    var btn = document.getElementById('tourNextBtn');
+
+    if (paso === 1) {
+      // Apuntar al control de capas (arriba a la derecha)
+      var layersControl = document.querySelector('.leaflet-control-layers');
+      if (layersControl) {
+        var rect = layersControl.getBoundingClientRect();
+        popover.style.top = (rect.bottom + 12) + 'px';
+        popover.style.left = (rect.left - 120) + 'px';
+      } else {
+        popover.style.top = '100px';
+        popover.style.right = '20px';
+      }
+
+      title.innerText = "🌱 1. Capas Ambientales";
+      text.innerText = "Los proyectos de carbono tienen incidencia en Biodiversidad, Agua y Suelos. ¡Prueba a desplegar y activar estas capas aquí!";
+      btn.innerText = "Siguiente →";
+      popover.style.display = 'block';
+
+    } else if (paso === 2) {
+      // Apuntar al selector de filtro "Mostrar zonas con proyectos"
+      var proyFilter = document.getElementById('div_ProyCarbo') || document.getElementById('menu');
+      if (proyFilter) {
+        var rect = proyFilter.getBoundingClientRect();
+        popover.style.top = (rect.top + 10) + 'px';
+        popover.style.left = (rect.left - 290) + 'px';
+      } else {
+        popover.style.top = '200px';
+        popover.style.left = '50%';
+      }
+
+      title.innerText = "🔎 2. Filtrar Proyectos";
+      text.innerText = "Aplica el filtro de 'Mostrar zonas con proyectos' para resaltar únicamente las áreas activas en el mapa.";
+      btn.innerText = "Entendido";
+      popover.style.display = 'block';
+
+    } else {
+      // Finalizar Tour
+      popover.style.display = 'none';
+    }
+  }
+
+  function siguientePasoTour() {
+    pasoActualTour++;
+    mostrarPasoTour(pasoActualTour);
+  }
+
+  var highlightLayer;
+  function highlightFeature(e) {
+  ...
 }
         var highlightLayer;
         function highlightFeature(e) {
