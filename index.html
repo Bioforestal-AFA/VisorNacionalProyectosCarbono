@@ -1147,6 +1147,7 @@ statsControl.addTo(map);
   }, 
   {
     label: '<div class="base-maps-separator"><b>Mapas de fondo</b></div>',
+	collapsed: true,
     children: [
       {label: '<span class="base-map-label">Google Satellite</span>', layer: layer_GoogleSatellite_1}, 
       {label: '<span class="base-map-label">Google Terrain</span>', layer: layer_GoogleTerrain_0}
@@ -1160,7 +1161,7 @@ statsControl.addTo(map);
             //openedSymbol: '&#8863; &#x1f5c1;',
             //collapseAll: 'Collapse all',
             //expandAll: 'Expand all',
-            collapsed: true, 
+            collapsed: false, 
         });
         lay.addTo(map);
 		document.addEventListener("DOMContentLoaded", function() {
