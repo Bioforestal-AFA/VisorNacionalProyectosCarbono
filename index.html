@@ -143,21 +143,25 @@
   visibility: hidden;
   pointer-events: none;
 }
-		/* --- ESTILOS PARA EL PANEL LATERAL DE FILTROS --- */
+		/* --- PANEL LATERAL DE FILTROS (TRANSPARENTE) --- */
       #menu {
         padding: 12px;
-        background-color: #f8fafc;
+        /* Fondo semi-transparente con efecto de difuminado/cristal */
+        background-color: rgba(248, 250, 252, 0.75) !important;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         box-sizing: border-box;
       }
 
       /* Tarjeta contenedora de cada grupo de filtros */
       .filter-group {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        /* Tarjetas con blanco semi-transparente */
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(226, 232, 240, 0.8);
         border-radius: 8px;
         padding: 12px;
         margin-bottom: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
 
       /* Títulos de sección con borde verde */
